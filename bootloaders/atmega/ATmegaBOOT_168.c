@@ -135,10 +135,10 @@
 #else
 /* Onboard LED is connected to pin PB5 in Arduino NG, Diecimila, and Duomilanuove */
 /* other boards like e.g. Crumb8, Crumb168 are using PB2 */
-#define LED_DDR  DDRB
-#define LED_PORT PORTB
-#define LED_PIN  PINB
-#define LED      PINB5
+#define LED_DDR  DDRD
+#define LED_PORT PORTD
+#define LED_PIN  PIND
+#define LED      PIND2
 #endif
 
 
