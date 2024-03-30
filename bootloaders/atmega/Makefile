@@ -36,10 +36,16 @@ LDSECTION  = --section-start=.text=0x3800
 # lock it), but since the high two bits of the lock byte are
 # unused, avrdude would get confused.
 
+# ISPFUSES    = avrdude -c $(ISPTOOL) -p $(MCU_TARGET) -P $(ISPPORT) $(ISPSPEED) \
+# -e -u -U lock:w:0x3f:m -U efuse:w:0x$(EFUSE):m -U hfuse:w:0x$(HFUSE):m -U lfuse:w:0x$(LFUSE):m
+# ISPFLASH    = avrdude -c $(ISPTOOL) -p $(MCU_TARGET) -P $(ISPPORT) $(ISPSPEED) \
+# -U flash:w:$(PROGRAM)_$(TARGET).hex -U lock:w:0x0f:m
+
 ISPFUSES    = avrdude -c $(ISPTOOL) -p $(MCU_TARGET) -P $(ISPPORT) $(ISPSPEED) \
--e -u -U lock:w:0x3f:m -U efuse:w:0x$(EFUSE):m -U hfuse:w:0x$(HFUSE):m -U lfuse:w:0x$(LFUSE):m
+-e -u -U efuse:w:0x$(EFUSE):m -U hfuse:w:0x$(HFUSE):m -U lfuse:w:0x$(LFUSE):m
 ISPFLASH    = avrdude -c $(ISPTOOL) -p $(MCU_TARGET) -P $(ISPPORT) $(ISPSPEED) \
--U flash:w:$(PROGRAM)_$(TARGET).hex -U lock:w:0x0f:m
+-U flash:w:$(PROGRAM)_$(TARGET).hex
+
 
 STK500 = "C:\Program Files\Atmel\AVR Tools\STK500\Stk500.exe"
 STK500-1 = $(STK500) -e -d$(MCU_TARGET) -pf -vf -if$(PROGRAM)_$(TARGET).hex \
@@ -165,6 +171,23 @@ atmega328_isp: LFUSE = FF
 atmega328_isp: EFUSE = 05
 atmega328_isp: isp
 
+liftdriver: TARGET = atmega328
+liftdriver: MCU_TARGET = atmega328p
+liftdriver: CFLAGS += '-DMAX_TIME_COUNT=F_CPU' '-DNUM_LED_FLASHES=10' -DBAUD_RATE=57600 '-DLIFTDRIVER'
+liftdriver: AVR_FREQ = 16000000L
+liftdriver: LDSECTION  = --section-start=.text=0x7800
+liftdriver: $(PROGRAM)_atmega328.hex
+
+liftdriver_isp: atmega328
+liftdriver_isp: TARGET = atmega328
+liftdriver_isp: MCU_TARGET = atmega328p
+liftdriver_isp: HFUSE = DA
+liftdriver_isp: LFUSE = FF
+liftdriver_isp: EFUSE = FD
+liftdriver_isp: ISPTOOL = avrispmkII
+liftdriver_isp: ISPSPEED =
+liftdriver_isp: isp
+
 atmega328_notp: TARGET = atmega328_notp
 atmega328_notp: MCU_TARGET = atmega328
 atmega328_notp: CFLAGS += '-DMAX_TIME_COUNT=F_CPU>>4' '-DNUM_LED_FLASHES=1' -DBAUD_RATE=57600
@@ -220,6 +243,8 @@ isp-stk500: $(PROGRAM)_$(TARGET).hex
 
 %.elf: $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+
+.PRECIOUS: %.elf
 
 clean:
 	rm -rf *.o *.elf *.lst *.map *.sym *.lss *.eep *.srec *.bin *.hex

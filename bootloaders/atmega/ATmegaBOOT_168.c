@@ -273,10 +273,43 @@ uint8_t error_count = 0;
 
 void (*app_start)(void) = 0x0000;
 
+#ifdef LIFTDRIVER
+#define SW_PORT PORTD
+#define SW_DDR DDRD
+#define SW_PIN PIND
+#define SW1 PD4
+#define SW2 PD3
+#endif
 
 /* main program starts here */
 int main(void)
 {
+#ifdef LIFTDRIVER
+	SW_DDR &= ~_BV(SW1);
+	SW_PORT |= _BV(SW1);
+	SW_DDR &= ~_BV(SW2);
+	SW_PORT |= _BV(SW2);
+
+	/* set LED pin as output */
+	LED_DDR |= _BV(LED);
+
+	uint32_t sw_counter = 0;
+	while(sw_counter < 5000000) {
+		sw_counter++;
+		LED_PORT |= _BV(LED);
+		if (SW_PIN & _BV(SW1)) {
+			LED_PORT &= ~_BV(LED);
+			app_start();
+		}
+		if (SW_PIN & _BV(SW2)) {
+			LED_PORT &= ~_BV(LED);
+			app_start();
+		}
+	}
+	LED_PORT &= ~_BV(LED);
+	while(!((SW_PIN & _BV(SW1)) && (SW_PIN & _BV(SW2))));
+#endif
+
 	uint8_t ch,ch2;
 	uint16_t w;
 
@@ -427,6 +460,10 @@ int main(void)
 	flash_led(NUM_LED_FLASHES + bootuart);
 #else
 	flash_led(NUM_LED_FLASHES);
+#endif
+
+#ifdef LIFTDRIVER
+	LED_PORT |= _BV(LED);
 #endif
 
 	/* 20050803: by DojoCorp, this is one of the parts provoking the
